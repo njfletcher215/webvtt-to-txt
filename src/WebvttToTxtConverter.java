@@ -1,5 +1,4 @@
 import java.io.*;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -25,13 +24,17 @@ public class WebvttToTxtConverter {
     public void convert() throws FileNotFoundException {
         int filesConverted = 0;
         int filesConvertedLength = 0;
-        if (filesToConvert.size() > 0) {
-            System.out.print("Files Converted:" + " ".repeat(8) + filesConverted);
-            for (File file : filesToConvert) {
+
+        if (filesToConvert.size() > 0) {    // make sure there are files to convert
+            System.out.print("Files Converted:" + " ".repeat(8) + filesConverted);  // counter tracks how many files
+                                                                                    // have been converted to String
+            for (File file : filesToConvert) {  // iterate through each file in filesToConvert
+
                 convertedFiles.add(this.convert(file));
+
                 filesConverted++;
                 filesConvertedLength = ("" + filesConverted).length();
-                System.out.print("\b".repeat(filesConvertedLength) + filesConverted);
+                System.out.print("\b".repeat(filesConvertedLength) + filesConverted);   // update counter
             }
             System.out.println();
             filesToConvert = new ArrayList<>();
@@ -48,28 +51,39 @@ public class WebvttToTxtConverter {
      */
     public String convert(File inFile) throws FileNotFoundException {
         final String NUMS = "1234567890";
-        String output = inFile.getAbsolutePath();
-        String line = "";
-        boolean add = true;
-        boolean beforeFirst = true;
+
+        String output = inFile.getAbsolutePath();   // String output starts with inFile's name, used when converting
+        String line = "";                           // from String to .txt
+
+        boolean add = true; // if we are clear to add the next character in the line
+        boolean beforeFirst = true; // if we are in the header of the doc (before line 1)
+
         Scanner scanner = new Scanner(inFile);
+
+        // get rid of everything before the first line of dialogue (file header, etc.)
         while (beforeFirst && scanner.hasNextLine()) {
             line = scanner.nextLine();
             if (line.length() > 0 && line.charAt(0) == '1') { beforeFirst = false; }
         }
+
+        // parse through the rest of the file, removing anything in tage (between < and >),
+        // and all timestamps/line numbers (any line beginning with a number)
         while (scanner.hasNextLine()) {
             line = scanner.nextLine();
-            if (line.length() > 0 && !NUMS.contains("" + line.charAt(0))) {
-                for (int i = 0; i < line.length(); i++) {
-                    if (line.charAt(i) == '>') {
-                        add = true;
-                        if (i != line.length() - 1) { i++; }
-                        else { break; }
+            if (line.length() > 0 && !NUMS.contains("" + line.charAt(0))) { // if the first character of the line is
+                                                                            // a number, ignore the whole line
+                                                                            // (removes line nums and timestamps,
+                                                                            // and some metadata)
+                for (int i = 0; i < line.length(); i++) {   // parse through each other line
+                    if (line.charAt(i) == '>') {    // when we reach a '>', start adding to the output again
+                        add = true;                 // this goes before the '<' check so noting gets added at <i></i>
+                        if (i != line.length() - 1) { i++; }    // if i isnt the end of line, move on to the next char
+                        else { break; }                         // before adding to output, else move on to next line
                     }
-                    if (line.charAt(i) == '<') {
+                    if (line.charAt(i) == '<') {    // when we reach a '<', stop adding to the output
                         add = false;
                     }
-                    if (add) {
+                    if (add) {  // if we are outside a tag, add to output
                         output = output + line.charAt(i);
                     }
                 }
@@ -120,7 +134,7 @@ public class WebvttToTxtConverter {
     public void prepAll(File inDir) {
         for (File inFile : inDir.listFiles()) {
             if (inFile.isFile()) { this.prepFile(inFile); }
-            else if (inFile.isDirectory()) { this.prepAll(inFile); }
+            else if (inFile.isDirectory()) { this.prepAll(inFile); } // also preps all files in all subdirectories
         }
     }
 
